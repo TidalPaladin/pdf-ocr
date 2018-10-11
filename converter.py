@@ -43,9 +43,8 @@ def get_pages(path):
 
 def parse(path, threads):
     pages = get_pages(path) - 1
-    parallel_cmd = "convert -density 300 \'%s[{}]\' -background white -alpha Off -depth 8 tiff:- | tesseract stdin %s pdf 2>/dev/null"
-    temp_name = "ocr_temp{}"
-    parallel_cmd = parallel_cmd % (path, temp_name)
+    parallel_cmd = "convert -density 300 \'%s[{}]\' -background white -alpha Off -depth 8 tiff:- | tesseract stdin %s-ocr-temp{} pdf 2>/dev/null"
+    parallel_cmd = parallel_cmd % (path, path.split('.')[0])
 
     cmd = subprocess.Popen(['seq', '0', str(pages)], stdout=subprocess.PIPE)
     cmd2 = subprocess.Popen(
@@ -66,14 +65,14 @@ def parse(path, threads):
 
 
 def merge(path, dest):
-    temp_files = sorted(glob.glob("ocr_temp*.pdf"))
+    temp_files = sorted(glob.glob("%s-ocr-temp*.pdf" % path.split('.')[0]))
     cmd = subprocess.Popen(['pdfjoin'] + temp_files +
                            ['--outfile', dest], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     cmd.wait()
     print("Done: %s" % dest)
 
     # Cleanup
-    for f in glob.glob("ocr_temp*.pdf"):
+    for f in glob.glob("%s-ocr-temp*.pdf" % path.split('.')[0]):
         os.remove(f)
     return
 
